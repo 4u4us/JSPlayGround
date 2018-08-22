@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+<script type="text/javascript">
+var text = 1;
+var textp1 = 80;
+var textp2 = 10;
+var style_1 = "margin-left:80px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
+var style_2 = "margin-left:10px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
+var flipflop = 0;
+var xOfMouse = 0;
+var yOfMouse = 0;
+var coordOfMouse = "";
+//------------------------------------------------------------------------------
+function showCoordMouse()
+{
+	document.getElementById("mouseCoord_div").innerHTML = coordOfMouse;
+}
+//------------------------------------------------------------------------------
+function doInitGame(useTimeout)
+{
+	document.addEventListener('keyup', function(event){
+	   let key = event.key.toUpperCase();
+		if ( key == 'L' ) {
+			// 'L' key is pressed
+			document.getElementById("game_div").style = style_2;
+		} else if ( key == 'R' ) {
+			// 'R' key is pressed
+			document.getElementById("game_div").style = style_1;
+		}
+	} );
+	document.addEventListener('mousedown', function(event){
+		xOfMouse = event.clientX;     // Get the horizontal coordinate
+		yOfMouse = event.clientY;     // Get the vertical coordinate
+		coordOfMouse = "X coords: " + xOfMouse + ", Y coords: " + yOfMouse;
+		showCoordMouse();
+		if ( flipflop == 0 ) {
+			flipflop=1;
+		} else if ( flipflop == 1 ) {
+			flipflop=0;
+		}
+	} );
+	
+	if (useTimeout>0)
+	{
+	setTimeout("changeText()", 200);
+	setTimeout("moveCanevas()", 200); // listens to the global var flipflop
+	}
+}
+//------------------------------------------------------------------------------
+function changeText() {
+	document.getElementById("game_div").innerHTML = text;
+	if (flipflop == 0)
+		{
+		text++;
+		}
+	else
+		{
+		text--;
+		}
+	var textpp1 = textp1+text*5;
+	var textpp2 = textp2+text*5;
+	style_1 = "margin-left:" + textpp1 + "px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
+	style_2 = "margin-left:" + textpp2 + "px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
+	if (text == 0)
+		{
+		text = 10;
+		}
+	else if (text <= 5) 
+		{
+		if (flipflop == 1)
+			{
+			document.getElementById("game_div").style = style_1;
+			}
+		else
+			{
+			document.getElementById("game_div").style = style_2;
+			}
+		}
+	else if (text == 11)
+		{
+		text = 1;
+		}
+	else if (text > 5)
+		{
+		if (flipflop == 0)
+			{
+			document.getElementById("game_div").style = style_2;
+			}
+		else
+			{
+			document.getElementById("game_div").style = style_1;
+			}
+		}
+	setTimeout("changeText()", 200);
+	setTimeout("moveCanevas()", 200);
+}
+//------------------------------------------------------------------------------
+function moveCanevas()
+{
+
+//  -----> X
+//  |
+//  |
+//  |
+//  Y
+  var canvas = document.getElementById('game_canvas');
+  var context = canvas.getContext('2d');
+  var centerX = canvas.width / 2;
+  var centerY = canvas.height / 2;
+  var radius = 70;
+  var origin_perim = -Math.PI/4;
+  var open_section = 0.5*Math.PI;
+  context.clearRect(0,0,canvas.width,canvas.height);
+  context.beginPath();
+	if ( flipflop == 1 ) {
+		context.arc(centerX, centerY, radius, origin_perim , 2 * Math.PI - open_section + origin_perim, false);
+	} else if ( flipflop == 0 ) {
+		context.arc(centerX, centerY, radius, 0, 2 * Math.PI - open_section, false);
+	}
+  context.closePath();
+  context.fillStyle = 'red';
+  context.fill();
+  context.lineWidth = 5;
+  context.strokeStyle = '#003300';
+  context.stroke();
+}
+</script>
+
+<title>GAME ONE</title>
+
+</head>
+
+<body id="BodyGame">
+LEFT CLICK TO SWITCH DIRECTION
+<div id="empty_div"></div>
+//------------------------------------------------------------------------------
+<div id="mouseCoord_div"></div>
+//------------------------------------------------------------------------------
+<div id="game_div"></div>
+//------------------------------------------------------------------------------
+<canvas id="game_canvas" width="578" height="200"></canvas>
+//------------------------------------------------------------------------------
+<script>
+doInitGame(1);
+</script>
+
+</body>
+
