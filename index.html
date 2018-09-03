@@ -3,101 +3,108 @@
 <head>
 
 <script type="text/javascript">
-var text = 1;
-var textp1 = 80;
-var textp2 = 10;
-var style_1 = "margin-left:80px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
-var style_2 = "margin-left:10px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
-var flipflop = 0;
+var xOfTreas = 0;
+var yOfTreas = 0;
+var scoreClick = 0;
+var radiusOfSearch = 10;
+var style_win = "background-color:#51b0cc;";
 var xOfMouse = 0;
 var yOfMouse = 0;
 var coordOfMouse = "";
+var coordOfTreas = "";
+var currentDistance;
+var isFound = 0;
+var customThreshold = 0.01;
 //------------------------------------------------------------------------------
 function showCoordMouse()
 {
 	document.getElementById("mouseCoord_div").innerHTML = coordOfMouse;
 }
 //------------------------------------------------------------------------------
-function doInitGame(useTimeout)
+function showCurrentDistance()
 {
-	document.addEventListener('keyup', function(event){
-	   let key = event.key.toUpperCase();
-		if ( key == 'L' ) {
-			// 'L' key is pressed
-			document.getElementById("game_div").style = style_2;
-		} else if ( key == 'R' ) {
-			// 'R' key is pressed
-			document.getElementById("game_div").style = style_1;
-		}
-	} );
-	document.addEventListener('mousedown', function(event){
-		xOfMouse = event.clientX;     // Get the horizontal coordinate
-		yOfMouse = event.clientY;     // Get the vertical coordinate
-		coordOfMouse = "X coords: " + xOfMouse + ", Y coords: " + yOfMouse;
-		showCoordMouse();
-		if ( flipflop == 0 ) {
-			flipflop=1;
-		} else if ( flipflop == 1 ) {
-			flipflop=0;
-		}
-	} );
+	document.getElementById("currentDistance_div").innerHTML = currentDistance;
+}
+function customEventFunction(event)
+{
+    var canvas = document.getElementById('game_canvas');
+	xOfMouse = event.pageX - canvas.offsetLeft;     // Get the horizontal coordinate
+	yOfMouse = event.pageY - canvas.offsetTop;     // Get the vertical coordinate
+	coordOfMouse = "X coords: " + xOfMouse + ", Y coords: " + yOfMouse;
+	//coordOfTreasure = "X coords: " + xOfTreas + ", Y coords: " + yOfTreas;
+	//showCoordMouse();
+	drawDistanceBasedColoredCirle();
+	//showCurrentDistance();
+	scoreClick++;
+}
+//------------------------------------------------------------------------------
+function doInitGame()
+{
+	setTimeout("checkIsFound()", 200);
 	
-	if (useTimeout>0)
+	// draw y elemOf ]0...1] from uniform dist
+	// map to x elemOf ]0...range_max] using cdf(x): y = alpha * x + seed  
+	// x = range_max ==> y = 1.0 
+	// x = 0         ==> y = seed elemOf ]0...1]
+	// alpha = ( 1 - seed ) / range_max
+	// x =  ( y - seed ) * ( range_max / ( 1 -seed ) )  
+	
+	var aSeed = Date.now()/8640000000000000;
+	while (aSeed<0.01) 
 	{
-	setTimeout("changeText()", 200);
-	setTimeout("moveCanevas()", 200); // listens to the global var flipflop
+		aSeed = aSeed*100.0;
 	}
+	while (aSeed>=1) 
+	{
+		aSeed = aSeed/10.0;
+	}	
+	var aRandomUniformNumber = Math.random();
+	xOfTreas = Math.floor( ( aRandomUniformNumber - aSeed ) * ( 900.0 / ( 1.0 - aSeed ) ) );
+	aRandomUniformNumber = Math.random();
+	yOfTreas = Math.floor( ( aRandomUniformNumber - aSeed ) * ( 500.0 / ( 1.0 - aSeed ) ) );
+	document.addEventListener('mousedown', customEventFunction );
 }
 //------------------------------------------------------------------------------
-function changeText() {
-	document.getElementById("game_div").innerHTML = text;
-	if (flipflop == 0)
-		{
-		text++;
-		}
-	else
-		{
-		text--;
-		}
-	var textpp1 = textp1+text*5;
-	var textpp2 = textp2+text*5;
-	style_1 = "margin-left:" + textpp1 + "px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
-	style_2 = "margin-left:" + textpp2 + "px; margin-top:80px; width:140px; height:140px; background-color:#51b0cc;";
-	if (text == 0)
-		{
-		text = 10;
-		}
-	else if (text <= 5) 
-		{
-		if (flipflop == 1)
-			{
-			document.getElementById("game_div").style = style_1;
-			}
-		else
-			{
-			document.getElementById("game_div").style = style_2;
-			}
-		}
-	else if (text == 11)
-		{
-		text = 1;
-		}
-	else if (text > 5)
-		{
-		if (flipflop == 0)
-			{
-			document.getElementById("game_div").style = style_2;
-			}
-		else
-			{
-			document.getElementById("game_div").style = style_1;
-			}
-		}
-	setTimeout("changeText()", 200);
-	setTimeout("moveCanevas()", 200);
+function checkIsFound()
+{
+	if (isFound>0)
+	{
+	// remove listener
+	document.removeEventListener('mousedown', customEventFunction );
+	// display win
+	document.getElementById("mouseCoord_div").innerHTML = "You WON, SCORE: " + scoreClick;
+	document.getElementById("mouseCoord_div").style = style_win;
+	}
+	setTimeout("checkIsFound()", 50);
 }
 //------------------------------------------------------------------------------
-function moveCanevas()
+function mapContextToDistance(aRatioDist, aContext)
+{
+  // map context color to distance
+  if ( aRatioDist > 0.5 )
+  {
+  aContext.fillStyle = "#0000FF";
+  } else
+  if ( aRatioDist > 0.25 )
+  {
+  aContext.fillStyle = "#00FF00";
+  } else
+  if ( aRatioDist > 0.125 )
+  {
+  aContext.fillStyle = "#FFBB00";
+  } else
+  if ( aRatioDist > 0.06 )
+  {
+  aContext.fillStyle = "#FF4400";
+  }
+  else
+  {
+  aContext.fillStyle = "#FF0000";
+  }
+} 
+  
+//------------------------------------------------------------------------------
+function drawDistanceBasedColoredCirle()
 {
 
 //  -----> X
@@ -107,43 +114,54 @@ function moveCanevas()
 //  Y
   var canvas = document.getElementById('game_canvas');
   var context = canvas.getContext('2d');
-  var centerX = canvas.width / 2;
-  var centerY = canvas.height / 2;
-  var radius = 70;
-  var origin_perim = -Math.PI/4;
-  var open_section = 0.5*Math.PI;
-  context.clearRect(0,0,canvas.width,canvas.height);
+  var centerX = xOfMouse;
+  var centerY = yOfMouse;
+  var radius = radiusOfSearch;
+  
+  // calculate distance from treasure
+  var distanceToTreas = Math.sqrt( (xOfMouse-xOfTreas)*(xOfMouse-xOfTreas) + (yOfMouse-yOfTreas)*(yOfMouse-yOfTreas) );
+  //currentDistance = "Current distance to treasure : " + distanceToTreas;
+
+  //context.clearRect(0,0,canvas.width,canvas.height);
   context.beginPath();
-	if ( flipflop == 1 ) {
-		context.arc(centerX, centerY, radius, origin_perim , 2 * Math.PI - open_section + origin_perim, false);
-	} else if ( flipflop == 0 ) {
-		context.arc(centerX, centerY, radius, 0, 2 * Math.PI - open_section, false);
-	}
+  context.arc(centerX, centerY, radius, 0 , 2 * Math.PI, false);
   context.closePath();
-  context.fillStyle = 'red';
+ 
+  var maxDist = Math.sqrt( (900)*(500) + (900)*(500) );
+  
+  var ratioDist = distanceToTreas / maxDist;
+  currentDistance = "Current distance ratio to treasure : " + ratioDist;
+  // map to a suitable color
+  mapContextToDistance(ratioDist, context);
+
   context.fill();
-  context.lineWidth = 5;
-  context.strokeStyle = '#003300';
-  context.stroke();
+  
+  if ( ratioDist < customThreshold )
+  {
+  	isFound = 1;
+  }
+  
 }
 </script>
 
-<title>GAME ONE</title>
+<title>FIND THE TREASURE !</title>
 
 </head>
 
 <body id="BodyGame">
-LEFT CLICK TO SWITCH DIRECTION
+LEFT CLICK TO SEARCH inside the rectangle !
+<div id="empty_div1"></div>
+Blue: you are far! Green: Half way! 
+<div id="empty_div2"></div>
+Orange(s): closer and closer! Red: Burning close!
+<div id="empty_div3"></div>
+
 <div id="empty_div"></div>
-//------------------------------------------------------------------------------
 <div id="mouseCoord_div"></div>
-//------------------------------------------------------------------------------
-<div id="game_div"></div>
-//------------------------------------------------------------------------------
-<canvas id="game_canvas" width="578" height="200"></canvas>
-//------------------------------------------------------------------------------
+<div id="currentDistance_div"></div>
+<canvas id="game_canvas" left="0" width="900" height="500" style="border:1px solid #000000;"></canvas>
 <script>
-doInitGame(1);
+doInitGame();
 </script>
 
 </body>
